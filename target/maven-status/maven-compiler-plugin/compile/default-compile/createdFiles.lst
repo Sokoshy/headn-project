@@ -1,0 +1,10 @@
+com/bibliotheque/model/Emprunt.class
+com/bibliotheque/servlet/UtilisateurServlet.class
+com/bibliotheque/config/DatabaseConfig.class
+com/bibliotheque/dao/UtilisateurDAO.class
+com/bibliotheque/servlet/EmpruntServlet.class
+com/bibliotheque/model/Livre.class
+com/bibliotheque/servlet/LivreServlet.class
+com/bibliotheque/dao/EmpruntDAO.class
+com/bibliotheque/dao/LivreDAO.class
+com/bibliotheque/model/Utilisateur.class

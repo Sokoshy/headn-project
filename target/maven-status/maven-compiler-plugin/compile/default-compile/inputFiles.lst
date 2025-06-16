@@ -1,0 +1,10 @@
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/config/DatabaseConfig.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/dao/EmpruntDAO.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/dao/LivreDAO.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/dao/UtilisateurDAO.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/model/Emprunt.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/model/Livre.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/model/Utilisateur.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/servlet/EmpruntServlet.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/servlet/LivreServlet.java
+/home/sokoshy/Documents/headn/bloc-4/final-project/bibliotheque-app/src/main/java/com/bibliotheque/servlet/UtilisateurServlet.java
