@@ -25,6 +25,13 @@ public class Livre {
         this.disponible = disponible;
     }
     
+    public Livre(int id, String titre, String auteur) {
+        this.id = id;
+        this.titre = titre;
+        this.auteur = auteur;
+        this.disponible = true;
+    }
+    
     // Getters et Setters
     public int getId() {
         return id;

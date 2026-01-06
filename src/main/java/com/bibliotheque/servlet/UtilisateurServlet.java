@@ -1,6 +1,7 @@
 package com.bibliotheque.servlet;
 
-import com.bibliotheque.dao.UtilisateurDAO;
+import com.bibliotheque.service.UtilisateurService;
+import com.bibliotheque.service.ServiceResult;
 import com.bibliotheque.model.Utilisateur;
 
 import jakarta.servlet.ServletException;
@@ -15,11 +16,11 @@ import java.util.List;
 
 @WebServlet("/utilisateurs")
 public class UtilisateurServlet extends HttpServlet {
-    private UtilisateurDAO utilisateurDAO;
+    private UtilisateurService utilisateurService;
 
     @Override
     public void init() throws ServletException {
-        utilisateurDAO = new UtilisateurDAO();
+        utilisateurService = new UtilisateurService();
     }
 
     @Override
@@ -40,22 +41,18 @@ public class UtilisateurServlet extends HttpServlet {
                 session.removeAttribute("error");
             }
         }
-        try {
-            switch (action) {
-                case "list":
-                    listerUtilisateurs(request, response);
-                    break;
-                case "edit":
-                    afficherFormulaireEdit(request, response);
-                    break;
-                case "delete":
-                    supprimerUtilisateur(request, response);
-                    break;
-                default:
-                    listerUtilisateurs(request, response);
-            }
-        } catch (SQLException e) {
-            throw new ServletException("Erreur base de données", e);
+        switch (action) {
+            case "list":
+                listerUtilisateurs(request, response);
+                break;
+            case "edit":
+                afficherFormulaireEdit(request, response);
+                break;
+            case "delete":
+                supprimerUtilisateur(request, response);
+                break;
+            default:
+                listerUtilisateurs(request, response);
         }
     }
 
@@ -64,106 +61,86 @@ public class UtilisateurServlet extends HttpServlet {
             throws ServletException, IOException {
         String action = request.getParameter("action");
         if (action == null) action = "add";
-        try {
-            switch (action) {
-                case "add":
-                    ajouterUtilisateur(request, response);
-                    break;
-                case "update":
-                    modifierUtilisateur(request, response);
-                    break;
-                default:
-                    ajouterUtilisateur(request, response);
-            }
-        } catch (SQLException e) {
-            throw new ServletException("Erreur base de données", e);
+
+        switch (action) {
+            case "add":
+                ajouterUtilisateur(request, response);
+                break;
+            case "update":
+                modifierUtilisateur(request, response);
+                break;
+            default:
+                ajouterUtilisateur(request, response);
         }
     }
 
     private void listerUtilisateurs(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
-        List<Utilisateur> utilisateurs = utilisateurDAO.getAllUtilisateurs();
-        request.setAttribute("utilisateurs", utilisateurs);
+            throws ServletException, IOException {
+        ServiceResult<List<Utilisateur>> result = utilisateurService.getAllUtilisateurs();
+        if (result.isSuccess()) {
+            request.setAttribute("utilisateurs", result.getData());
+        } else {
+            request.setAttribute("error", result.getMessage());
+        }
         request.getRequestDispatcher("/WEB-INF/views/utilisateurs.jsp").forward(request, response);
     }
 
     private void ajouterUtilisateur(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
+            throws ServletException, IOException {
         String nom = request.getParameter("nom");
         String email = request.getParameter("email");
         HttpSession session = request.getSession();
-        if (nom != null && !nom.trim().isEmpty() && email != null && !email.trim().isEmpty()) {
-            Utilisateur utilisateur = new Utilisateur(nom.trim(), email.trim());
-            if (utilisateurDAO.ajouterUtilisateur(utilisateur)) {
-                session.setAttribute("message", "Utilisateur ajouté avec succès !");
-            } else {
-                session.setAttribute("error", "Erreur lors de l'ajout de l'utilisateur.");
-            }
+
+        ServiceResult<Utilisateur> result = utilisateurService.ajouterUtilisateur(nom, email);
+        if (result.isSuccess()) {
+            session.setAttribute("message", result.getMessage());
         } else {
-            session.setAttribute("error", "Nom et email sont obligatoires.");
+            session.setAttribute("error", result.getMessage());
         }
         response.sendRedirect(request.getContextPath() + "/utilisateurs");
     }
 
     private void afficherFormulaireEdit(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
+            throws ServletException, IOException {
         String idStr = request.getParameter("id");
         if (idStr != null) {
-            try {
-                int id = Integer.parseInt(idStr);
-                Utilisateur utilisateur = utilisateurDAO.getUtilisateurById(id);
-                if (utilisateur != null) {
-                    request.setAttribute("utilisateur", utilisateur);
-                    // Affiche le formulaire d'édition dans utilisateurs.jsp
-                    request.getRequestDispatcher("/WEB-INF/views/utilisateurs.jsp").forward(request, response);
-                    return;
-                }
-            } catch (NumberFormatException e) {
-                // ID invalide
+            ServiceResult<Utilisateur> result = utilisateurService.getUtilisateurById(idStr);
+            if (result.isSuccess()) {
+                request.setAttribute("utilisateur", result.getData());
+                // Affiche le formulaire d'édition dans utilisateurs.jsp
+                request.getRequestDispatcher("/WEB-INF/views/utilisateurs.jsp").forward(request, response);
+                return;
             }
         }
         response.sendRedirect(request.getContextPath() + "/utilisateurs");
     }
 
     private void modifierUtilisateur(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
+            throws ServletException, IOException {
         String idStr = request.getParameter("id");
         String nom = request.getParameter("nom");
         String email = request.getParameter("email");
         HttpSession session = request.getSession();
-        if (idStr != null && nom != null && !nom.trim().isEmpty() && email != null && !email.trim().isEmpty()) {
-            try {
-                int id = Integer.parseInt(idStr);
-                Utilisateur utilisateur = new Utilisateur(id, nom.trim(), email.trim());
-                if (utilisateurDAO.modifierUtilisateur(utilisateur)) {
-                    session.setAttribute("message", "Utilisateur modifié avec succès !");
-                } else {
-                    session.setAttribute("error", "Erreur lors de la modification de l'utilisateur.");
-                }
-            } catch (NumberFormatException e) {
-                session.setAttribute("error", "ID utilisateur invalide.");
-            }
+
+        ServiceResult<Utilisateur> result = utilisateurService.modifierUtilisateur(idStr, nom, email);
+        if (result.isSuccess()) {
+            session.setAttribute("message", result.getMessage());
         } else {
-            session.setAttribute("error", "Tous les champs sont obligatoires.");
+            session.setAttribute("error", result.getMessage());
         }
         response.sendRedirect(request.getContextPath() + "/utilisateurs");
     }
 
     private void supprimerUtilisateur(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException, SQLException {
+            throws ServletException, IOException {
         String idStr = request.getParameter("id");
         HttpSession session = request.getSession();
-        if (idStr != null) {
-            try {
-                int id = Integer.parseInt(idStr);
-                if (utilisateurDAO.supprimerUtilisateur(id)) {
-                    session.setAttribute("message", "Utilisateur supprimé avec succès !");
-                } else {
-                    session.setAttribute("error", "Erreur lors de la suppression de l'utilisateur.");
-                }
-            } catch (NumberFormatException e) {
-                session.setAttribute("error", "ID utilisateur invalide.");
-            }
+
+        ServiceResult<Boolean> result = utilisateurService.supprimerUtilisateur(idStr);
+        if (result.isSuccess()) {
+            session.setAttribute("message", result.getMessage());
+        } else {
+            session.setAttribute("error", result.getMessage());
         }
         response.sendRedirect(request.getContextPath() + "/utilisateurs");
     }

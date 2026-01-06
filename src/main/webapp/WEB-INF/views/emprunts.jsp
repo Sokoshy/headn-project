@@ -16,165 +16,174 @@
             <a href="${pageContext.request.contextPath}/" class="nav-link">← Retour à l'accueil</a>
         </div>
 
-        <!-- Messages d'alerte -->
         <c:if test="${not empty message}">
-            <div class="alert success">
-                ✅ ${message}
+            <div class="alert alert-success" role="alert" aria-live="polite">
+                ✅ <c:out value="${message}"/>
             </div>
         </c:if>
         <c:if test="${not empty error}">
-            <div class="alert error">❌ ${error}</div>
+            <div class="alert alert-error" role="alert" aria-live="assertive">
+                ❌ <c:out value="${error}"/>
+            </div>
         </c:if>
 
-        <!-- Formulaire nouvel emprunt -->
-        <div class="card">
-            <h2>📚 Nouvel Emprunt</h2>
-            <form action="${pageContext.request.contextPath}/emprunts" method="post">
-                <input type="hidden" name="action" value="add"/>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="utilisateurId">👤 Utilisateur :</label>
-                        <select name="utilisateurId" id="utilisateurId" class="form-control" required>
-                            <option value="">-- Sélectionner un utilisateur --</option>
-                            <c:forEach var="u" items="${utilisateurs}">
-                                <option value="${u.id}">${u.nom} (${u.email})</option>
-                            </c:forEach>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="livreId">📖 Livre :</label>
-                        <select name="livreId" id="livreId" class="form-control" required>
-                            <option value="">-- Sélectionner un livre --</option>
-                            <c:forEach var="l" items="${livresDisponibles}">
-                                <option value="${l.id}">${l.titre} (${l.auteur})</option>
-                            </c:forEach>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary">Emprunter</button>
-                    </div>
-                </div>
-            </form>
-        </div>
-
-        <!-- Filtre par utilisateur -->
-        <div class="card">
-            <h2>🔍 Filtrer les Emprunts</h2>
-            <div class="filter-section">
-                <form method="get" action="${pageContext.request.contextPath}/emprunts">
-                    <input type="hidden" name="action" value="list"/>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="filtreUtilisateur">Filtrer par utilisateur :</label>
-                            <select name="filtreUtilisateur" id="filtreUtilisateur" class="form-control" onchange="this.form.submit()">
-                                <option value="">-- Tous les utilisateurs --</option>
+        <!-- Section NOUVEL EMPRUNT -->
+        <div class="section section-add">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">📚</span>
+                    NOUVEL EMPRUNT
+                </h2>
+                <p class="section-description">Enregistrez un nouvel emprunt de livre</p>
+            </div>
+            <div class="card card-add">
+                <form action="${pageContext.request.contextPath}/emprunts" method="post" novalidate>
+                    <input type="hidden" name="action" value="add"/>
+                    <%= com.bibliotheque.config.CSRFUtil.getHiddenField(request) %>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="utilisateurId">👤 Utilisateur *</label>
+                            <select name="utilisateurId" id="utilisateurId" class="form-control" required aria-required="true">
+                                <option value="">-- Sélectionner un utilisateur --</option>
                                 <c:forEach var="u" items="${utilisateurs}">
-                                    <option value="${u.id}" <c:if test="${param.filtreUtilisateur == u.id}">selected</c:if>>
-                                        ${u.nom} (${u.email})
-                                    </option>
+                                    <option value="${u.id}"><c:out value="${u.nom}"/> (<c:out value="${u.email}"/>)</option>
                                 </c:forEach>
                             </select>
                         </div>
-                        <div></div>
-                        <div class="form-group">
-                            <noscript><button type="submit" class="btn btn-primary">Filtrer</button></noscript>
+                        <div class="form-field">
+                            <label for="livreId">📖 Livre *</label>
+                            <select name="livreId" id="livreId" class="form-control" required aria-required="true">
+                                <option value="">-- Sélectionner un livre --</option>
+                                <c:forEach var="l" items="${livresDisponibles}">
+                                    <option value="${l.id}"><c:out value="${l.titre}"/> (<c:out value="${l.auteur}"/>)</option>
+                                </c:forEach>
+                            </select>
                         </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success btn-large">📚 Enregistrer l'emprunt</button>
                     </div>
                 </form>
             </div>
         </div>
 
-        <!-- Tableau des emprunts -->
-        <div class="card">
-            <h2>📊 Liste des Emprunts</h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Utilisateur</th>
-                            <th>Email</th>
-                            <th>Livre</th>
-                            <th>Auteur</th>
-                            <th>Date Emprunt</th>
-                            <th>Date Retour</th>
-                            <th>Statut</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <c:forEach var="emprunt" items="${emprunts}">
-                            <!-- Supprimez cette ligne qui était commentée et qui causait le problème -->
-                            <!-- <c:if test="${empty param.filtreUtilisateur || param.filtreUtilisateur == emprunt.utilisateurId}"> -->
-                            
+        <!-- Section EMPRUNTS ACTIFS -->
+        <div class="section section-search">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">📖</span>
+                    EMPRUNTS EN COURS
+                </h2>
+                <p class="section-description">Livres actuellement empruntés par les membres</p>
+            </div>
+            <div class="card card-search">
+                <div class="table-container">
+                    <table role="table" aria-label="Emprunts en cours">
+                        <thead>
                             <tr>
-                                <td><strong>#${emprunt.id}</strong></td>
-                                <td>${emprunt.nomUtilisateur}</td>
-                                <td>${emprunt.emailUtilisateur}</td>
-                                <td><strong>${emprunt.titreLivre}</strong></td>
-                                <td><em>${emprunt.auteurLivre}</em></td>
-                                <td>${emprunt.dateEmprunt}</td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test="${not empty emprunt.dateRetour}">
-                                            ${emprunt.dateRetour}
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span style="color: #e74c3c; font-style: italic;">En cours</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test="${not empty emprunt.dateRetour}">
-                                            <span class="status-badge status-disponible">Rendu</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="status-badge status-emprunte">Emprunté</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td>
-                                    <c:if test="${empty emprunt.dateRetour}">
-                                        <form action="${pageContext.request.contextPath}/emprunts" method="post" style="display:inline">
-                                            <input type="hidden" name="action" value="retour"/>
-                                            <input type="hidden" name="empruntId" value="${emprunt.id}"/>
-                                            <button type="submit" class="btn btn-success">↩️ Retour</button>
-                                        </form>
-                                    </c:if>
-                                </td>
+                                <th scope="col">ID</th>
+                                <th scope="col">Membre</th>
+                                <th scope="col">Livre</th>
+                                <th scope="col">Date emprunt</th>
+                                <th scope="col">Actions</th>
                             </tr>
-                            
-                            <!-- Supprimez aussi cette ligne de fermeture -->
-                            <!-- </c:if> -->
-                        </c:forEach>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Liste des livres disponibles -->
-        <div class="card">
-            <h2>✅ Livres Disponibles</h2>
-            <div class="books-grid">
-                <c:forEach var="l" items="${livresDisponibles}">
-                    <div class="book-item">
-                        <div class="book-title">📖 ${l.titre}</div>
-                        <div class="book-author">✍️ ${l.auteur}</div>
-                        <span class="status-badge status-disponible">Disponible</span>
-                    </div>
-                </c:forEach>
-            </div>
-            <c:if test="${empty livresDisponibles}">
-                <div style="text-align: center; color: #7f8c8d; padding: 40px;">
-                    <h3>📚 Aucun livre disponible</h3>
-                    <p>Tous les livres sont actuellement empruntés.</p>
+                        </thead>
+                        <tbody>
+                            <c:forEach var="emprunt" items="${emprunts}">
+                                <tr>
+                                    <td><strong>#<c:out value="${emprunt.id}"/></strong></td>
+                                    <td>
+                                        <c:out value="${emprunt.nomUtilisateur}"/><br/>
+                                        <small><c:out value="${emprunt.emailUtilisateur}"/></small>
+                                    </td>
+                                    <td>
+                                        <c:out value="${emprunt.titreLivre}"/><br/>
+                                        <small><c:out value="${emprunt.auteurLivre}"/></small>
+                                    </td>
+                                    <td><c:out value="${emprunt.dateEmprunt}"/></td>
+                                    <td>
+                                        <form method="post" action="${pageContext.request.contextPath}/emprunts" style="display:inline;">
+                                            <input type="hidden" name="action" value="return"/>
+                                            <input type="hidden" name="id" value="<c:out value="${emprunt.id}"/>"/>
+                                            <%= com.bibliotheque.config.CSRFUtil.getHiddenField(request) %>
+                                            <button type="submit" class="btn btn-success btn-small">
+                                                ✅ Retourner le livre
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                            <c:if test="${empty emprunts}">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <span class="icon">📭</span>
+                                            <h3>Aucun emprunt en cours</h3>
+                                            <p>Tous les livres sont disponibles</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </c:if>
+                        </tbody>
+                    </table>
                 </div>
-            </c:if>
+            </div>
         </div>
 
-        <div class="header" style="margin-top: 30px; padding: 20px;">
-            <p style="color: #7f8c8d;">&copy; 2025 Gestionnaire de Bibliothèque - Projet Éducatif</p>
+        <!-- Section HISTORIQUE -->
+        <div class="section section-collection">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">📋</span>
+                    HISTORIQUE DES EMPRUNTS
+                </h2>
+                <p class="section-description">Historique complet des emprunts et retours</p>
+            </div>
+            <div class="card card-collection" id="historique">
+                <div class="table-container">
+                    <table role="table" aria-label="Historique des emprunts">
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">Membre</th>
+                                <th scope="col">Livre</th>
+                                <th scope="col">Date emprunt</th>
+                                <th scope="col">Date retour</th>
+                                <th scope="col">Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <c:forEach var="emprunt" items="${historique}">
+                                <tr>
+                                    <td><strong>#<c:out value="${emprunt.id}"/></strong></td>
+                                    <td><c:out value="${emprunt.nomUtilisateur}"/></td>
+                                    <td><c:out value="${emprunt.titreLivre}"/></td>
+                                    <td><c:out value="${emprunt.dateEmprunt}"/></td>
+                                    <td><c:out value="${emprunt.dateRetour}"/></td>
+                                    <td>
+                                        <span class="status-badge status-available">Terminé</span>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                            <c:if test="${empty historique}">
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="empty-state">
+                                            <span class="icon">📭</span>
+                                            <h3>Aucun historique</h3>
+                                            <p>Les emprunts terminés apparaîtront ici</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </c:if>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>&copy; 2025 Gestionnaire de Bibliothèque - Module Gestion des Emprunts</p>
         </div>
     </div>
 </body>

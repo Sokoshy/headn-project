@@ -1,5 +1,7 @@
 package com.bibliotheque.servlet;
 
+import com.bibliotheque.config.CSRFUtil;
+import com.bibliotheque.config.ValidationUtil;
 import com.bibliotheque.dao.LivreDAO;
 import com.bibliotheque.model.Livre;
 
@@ -57,6 +59,12 @@ public class LivreServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
         
+        // Validation CSRF
+        if (!CSRFUtil.validateToken(request)) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Token CSRF invalide");
+            return;
+        }
+        
         String action = request.getParameter("action");
         if (action == null) action = "add";
         
@@ -78,6 +86,9 @@ public class LivreServlet extends HttpServlet {
     
     private void listerLivres(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException, SQLException {
+        
+        // Générer token CSRF pour les formulaires
+        CSRFUtil.generateToken(request);
         
         List<Livre> livres = livreDAO.getAllLivres();
         request.setAttribute("livres", livres);
@@ -114,24 +125,28 @@ public class LivreServlet extends HttpServlet {
     private void ajouterLivre(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException, SQLException {
         
-        String titre = request.getParameter("titre");
-        String auteur = request.getParameter("auteur");
+        String titre = ValidationUtil.sanitizeInput(request.getParameter("titre"));
+        String auteur = ValidationUtil.sanitizeInput(request.getParameter("auteur"));
         
-        if (titre != null && !titre.trim().isEmpty() && 
-            auteur != null && !auteur.trim().isEmpty()) {
-            
-            Livre livre = new Livre(titre.trim(), auteur.trim());
+        // Validation des entrées
+        if (!ValidationUtil.isNotEmpty(titre) || !ValidationUtil.isNotEmpty(auteur)) {
+            request.setAttribute("error", "Titre et auteur sont obligatoires.");
+        } else if (!ValidationUtil.isValidTitre(titre)) {
+            request.setAttribute("error", "Titre invalide. Le titre doit contenir entre 1 et 200 caractères.");
+        } else if (!ValidationUtil.isValidAuteur(auteur)) {
+            request.setAttribute("error", "Auteur invalide. Le nom doit contenir entre 2 et 100 caractères.");
+        } else {
+            Livre livre = new Livre(titre, auteur);
             if (livreDAO.ajouterLivre(livre)) {
                 request.setAttribute("message", "Livre ajouté avec succès!");
             } else {
                 request.setAttribute("error", "Erreur lors de l'ajout du livre.");
             }
-        } else {
-            request.setAttribute("error", "Titre et auteur sont obligatoires.");
         }
         
-        // Rediriger vers la liste
-        response.sendRedirect(request.getContextPath() + "/livres");
+        // Générer token CSRF et rediriger vers la liste
+        CSRFUtil.generateToken(request);
+        listerLivres(request, response);
     }
     
     private void modifierLivre(HttpServletRequest request, HttpServletResponse response) 

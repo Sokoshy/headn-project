@@ -6,25 +6,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestion des Livres - Gestionnaire de Bibliothèque</title>
+    <meta name="description" content="Gérez votre collection de livres facilement">
     <link rel="stylesheet" type="text/css" href="css/styles.css">
     <script>
-        // Script pour ajouter l'animation de mise en évidence
+        // Variable pour suivre l'état d'affichage
+        let showingDisponibles = ${param.action == 'disponibles' ? 'true' : 'false'};
+
+        // Fonction pour basculer entre "disponibles uniquement" et "tous les livres"
+        function toggleDisponibles() {
+            showingDisponibles = !showingDisponibles;
+            const button = document.getElementById('toggle-disponibles');
+
+            if (showingDisponibles) {
+                // Afficher seulement les disponibles
+                button.innerHTML = '📚 Afficher tous les livres';
+                button.classList.remove('btn-info');
+                button.classList.add('btn-warning');
+                window.location.href = '${pageContext.request.contextPath}/livres?action=disponibles#collection';
+            } else {
+                // Afficher tous les livres
+                button.innerHTML = '✅ Afficher seulement les livres disponibles';
+                button.classList.remove('btn-warning');
+                button.classList.add('btn-info');
+                window.location.href = '${pageContext.request.contextPath}/livres#collection';
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
-            // Vérifier si l'URL contient le paramètre pour les livres disponibles
+            // Animation pour les livres disponibles
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('action') === 'disponibles') {
-                // Attendre un peu pour que la page soit chargée
                 setTimeout(function() {
-                    const tableContainer = document.querySelector('#tableau-livres .table-container');
+                    const tableContainer = document.querySelector('#collection .table-container');
                     if (tableContainer) {
                         tableContainer.classList.add('highlight-table');
-                        // Retirer la classe après l'animation
                         setTimeout(function() {
                             tableContainer.classList.remove('highlight-table');
                         }, 2000);
                     }
                 }, 500);
             }
+
+            // Scroll vers la section d'édition si applicable
+            <c:if test="${not empty utilisateur}">
+            setTimeout(function() {
+                const editSection = document.querySelector('.section-edit');
+                if (editSection) {
+                    editSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    editSection.classList.add('highlight-section');
+                    setTimeout(function() {
+                        editSection.classList.remove('highlight-section');
+                    }, 3000);
+                }
+            }, 500);
+            </c:if>
         });
     </script>
 </head>
@@ -38,144 +73,222 @@
 
         <!-- Messages de notification -->
         <c:if test="${not empty message}">
-            <div class="alert alert-success">
-                ✅ ${message}
+            <div class="alert alert-success" role="alert" aria-live="polite">
+                ✅ <c:out value="${message}"/>
             </div>
         </c:if>
         <c:if test="${not empty error}">
-            <div class="alert alert-error">
-                ❌ ${error}
+            <div class="alert alert-error" role="alert" aria-live="assertive">
+                ❌ <c:out value="${error}"/>
             </div>
         </c:if>
 
-        <!-- Formulaire d'ajout de livre -->
-        <div class="card">
-            <h2>➕ Ajouter un nouveau livre</h2>
-            <form action="${pageContext.request.contextPath}/livres" method="post">
-                <input type="hidden" name="action" value="add"/>
-                <div class="form-group">
-                    <input type="text" name="titre" class="form-control" placeholder="Titre du livre" required/>
-                    <input type="text" name="auteur" class="form-control" placeholder="Auteur du livre" required/>
-                    <button type="submit" class="btn btn-primary">Ajouter le livre</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Section de recherche -->
-        <div class="card">
-            <h2>🔍 Recherche et filtres</h2>
-            <form method="get" action="${pageContext.request.contextPath}/livres">
-                <input type="hidden" name="action" value="recherche"/>
-                <div class="search-section">
-                    <input type="text" name="terme" class="form-control" 
-                           placeholder="Rechercher par titre ou auteur..." 
-                           value="${terme != null ? terme : ''}"/>
-                    <button type="submit" class="btn btn-primary">Rechercher</button>
-                    <a href="${pageContext.request.contextPath}/livres" class="btn btn-secondary">Réinitialiser</a>
-                </div>
-            </form>
-            
-            <div class="quick-actions">
-                <a href="${pageContext.request.contextPath}/livres?action=disponibles#tableau-livres" class="btn btn-primary btn-small">
-                    ✅ Livres disponibles uniquement
-                </a>
+        <!-- Section AJOUT DE LIVRE -->
+        <div class="section section-add">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">📝</span>
+                    AJOUTER UN LIVRE
+                </h2>
+                <p class="section-description">Ajoutez un nouveau livre à votre collection</p>
             </div>
-        </div>
-
-        <!-- Tableau des livres avec ancrage -->
-        <div class="card table-anchor" id="tableau-livres">
-            <h2>📚 Liste des livres
-                <c:if test="${param.action == 'disponibles'}">
-                    <span style="font-size: 0.7em; color: #28a745;">(Disponibles uniquement)</span>
-                </c:if>
-            </h2>
-            <div class="table-container">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Titre</th>
-                            <th>Auteur</th>
-                            <th>Disponibilité</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <c:forEach var="livre" items="${livres}">
-                            <tr>
-                                <td><strong>#${livre.id}</strong></td>
-                                <td>${livre.titre}</td>
-                                <td>${livre.auteur}</td>
-                                <td>
-                                    <c:choose>
-                                        <c:when test="${livre.disponible}">
-                                            <span class="status-badge status-available">Disponible</span>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <span class="status-badge status-unavailable">Emprunté</span>
-                                        </c:otherwise>
-                                    </c:choose>
-                                </td>
-                                <td>
-                                    <div class="actions">
-                                        <a href="${pageContext.request.contextPath}/livres?action=edit&id=${livre.id}" 
-                                           class="btn btn-edit btn-small">Modifier</a>
-                                        <a href="${pageContext.request.contextPath}/livres?action=delete&id=${livre.id}" 
-                                           class="btn btn-delete btn-small"
-                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce livre ?');">Supprimer</a>
-                                    </div>
-                                </td>
-                            </tr>
-                        </c:forEach>
-                        <c:if test="${empty livres}">
-                            <tr>
-                                <td colspan="5">
-                                    <div class="empty-state">
-                                        <span class="icon">📭</span>
-                                        <h3>Aucun livre trouvé</h3>
-                                        <p>
-                                            <c:choose>
-                                                <c:when test="${param.action == 'disponibles'}">
-                                                    Aucun livre disponible pour le moment
-                                                </c:when>
-                                                <c:otherwise>
-                                                    Ajoutez votre premier livre ou modifiez vos critères de recherche
-                                                </c:otherwise>
-                                            </c:choose>
-                                        </p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </c:if>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Formulaire de modification de livre -->
-        <c:if test="${not empty livre}">
-            <div class="card">
-                <h2>✏️ Modifier le livre</h2>
-                <form action="${pageContext.request.contextPath}/livres" method="post">
-                    <input type="hidden" name="action" value="update"/>
-                    <input type="hidden" name="id" value="${livre.id}"/>
-                    <div class="form-group">
-                        <input type="text" name="titre" class="form-control" placeholder="Titre du livre" value="${livre.titre}" required/>
-                        <input type="text" name="auteur" class="form-control" placeholder="Auteur du livre" value="${livre.auteur}" required/>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <label style="display: flex; align-items: center; gap: 5px;">
-                                <input type="checkbox" name="disponible" <c:if test="${livre.disponible}">checked</c:if> />
-                                Disponible
-                            </label>
+            <div class="card card-add">
+                <form action="${pageContext.request.contextPath}/livres" method="post" novalidate>
+                    <input type="hidden" name="action" value="add"/>
+                    <%= com.bibliotheque.config.CSRFUtil.getHiddenField(request) %>
+                    <div class="form-grid">
+                        <div class="form-field">
+                            <label for="titre-livre">📖 Titre du livre *</label>
+                            <input type="text" id="titre-livre" name="titre" class="form-control"
+                                   placeholder="Ex: Le Petit Prince" required aria-required="true"/>
+                        </div>
+                        <div class="form-field">
+                            <label for="auteur-livre">👤 Auteur *</label>
+                            <input type="text" id="auteur-livre" name="auteur" class="form-control"
+                                   placeholder="Ex: K&R, J.K. Rowling, Antoine de Saint-Exupéry" required aria-required="true"/>
                         </div>
                     </div>
-                    <div style="display: flex; gap: 15px; justify-content: center; margin-top: 20px;">
-                        <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
-                        <a href="${pageContext.request.contextPath}/livres" class="btn btn-secondary">❌ Annuler</a>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-success btn-large">
+                            ➕ Ajouter à la collection
+                        </button>
                     </div>
                 </form>
             </div>
+        </div>
+
+        <!-- Section RECHERCHE -->
+        <div class="section section-search">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">🔍</span>
+                    RECHERCHER DES LIVRES
+                </h2>
+                <p class="section-description">Trouvez rapidement un livre dans votre collection</p>
+            </div>
+            <div class="card card-search">
+                <form method="get" action="${pageContext.request.contextPath}/livres">
+                    <input type="hidden" name="action" value="recherche"/>
+                    <div class="search-container">
+                        <div class="search-input-group">
+                            <label for="terme-recherche">Rechercher par titre ou auteur</label>
+                            <input type="search" id="terme-recherche" name="terme" class="form-control search-input"
+                                   placeholder="Tapez votre recherche..."
+                                   value="<c:out value="${terme != null ? terme : ''}"/>"/>
+                        </div>
+                        <div class="search-buttons">
+                            <button type="submit" class="btn btn-primary">🔍 Rechercher</button>
+                            <a href="${pageContext.request.contextPath}/livres" class="btn btn-secondary">🔄 Tout afficher</a>
+                        </div>
+                    </div>
+                </form>
+                <div class="filter-actions">
+                    <c:choose>
+                        <c:when test="${param.action == 'disponibles'}">
+                            <button id="toggle-disponibles" class="btn btn-info" onclick="toggleDisponibles()">
+                                📚 Afficher tous les livres
+                            </button>
+                        </c:when>
+                        <c:otherwise>
+                            <button id="toggle-disponibles" class="btn btn-info" onclick="toggleDisponibles()">
+                                ✅ Afficher seulement les livres disponibles
+                            </button>
+                        </c:otherwise>
+                    </c:choose>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section EDITION (conditionnelle) -->
+        <c:if test="${not empty utilisateur}">
+            <div class="section section-edit">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <span class="section-icon">✏️</span>
+                        MODIFIER LE LIVRE
+                    </h2>
+                    <p class="section-description">Modifiez les informations du livre sélectionné</p>
+                </div>
+                <div class="card card-edit">
+                    <form action="${pageContext.request.contextPath}/livres" method="post" novalidate>
+                        <input type="hidden" name="action" value="update"/>
+                        <input type="hidden" name="id" value="<c:out value="${utilisateur.id}"/>"/>
+                        <%= com.bibliotheque.config.CSRFUtil.getHiddenField(request) %>
+                        <div class="form-grid">
+                            <div class="form-field">
+                                <label for="edit-titre-livre">📖 Titre du livre *</label>
+                                <input type="text" id="edit-titre-livre" name="titre" class="form-control"
+                                       value="<c:out value="${utilisateur.titre}"/>" required aria-required="true"/>
+                            </div>
+                            <div class="form-field">
+                                <label for="edit-auteur-livre">👤 Auteur *</label>
+                                <input type="text" id="edit-auteur-livre" name="auteur" class="form-control"
+                                       value="<c:out value="${utilisateur.auteur}"/>" required aria-required="true"/>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-warning">💾 Enregistrer les modifications</button>
+                            <a href="${pageContext.request.contextPath}/livres" class="btn btn-secondary">❌ Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </c:if>
+
+        <!-- Section COLLECTION -->
+        <div class="section section-collection">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <span class="section-icon">📚</span>
+                    <c:choose>
+                        <c:when test="${param.action == 'disponibles'}">
+                            LIVRES DISPONIBLES SEULEMENT
+                            <span class="filter-indicator active">🔍 Filtrage actif</span>
+                        </c:when>
+                        <c:otherwise>
+                            VOTRE COLLECTION
+                        </c:otherwise>
+                    </c:choose>
+                </h2>
+                <p class="section-description">
+                    <c:choose>
+                        <c:when test="${param.action == 'disponibles'}">
+                            Liste des livres actuellement disponibles à l'emprunt
+                        </c:when>
+                        <c:otherwise>
+                            Consultez et gérez tous les livres de votre bibliothèque
+                        </c:otherwise>
+                    </c:choose>
+                </p>
+            </div>
+            <div class="card card-collection" id="collection">
+                <div class="table-container">
+                    <table role="table" aria-label="Liste des livres">
+                        <thead>
+                            <tr>
+                                <th scope="col">ID</th>
+                                <th scope="col">Titre</th>
+                                <th scope="col">Auteur</th>
+                                <th scope="col">Disponibilité</th>
+                                <th scope="col">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <c:forEach var="livre" items="${livres}">
+                                <tr>
+                                    <td><strong>#<c:out value="${livre.id}"/></strong></td>
+                                    <td><c:out value="${livre.titre}"/></td>
+                                    <td><c:out value="${livre.auteur}"/></td>
+                                    <td>
+                                        <c:choose>
+                                            <c:when test="${livre.disponible}">
+                                                <span class="status-badge status-available">Disponible</span>
+                                            </c:when>
+                                            <c:otherwise>
+                                                <span class="status-badge status-unavailable">Emprunté</span>
+                                            </c:otherwise>
+                                        </c:choose>
+                                    </td>
+                                    <td>
+                                        <div class="actions">
+                                            <a href="${pageContext.request.contextPath}/livres?action=edit&id=${livre.id}"
+                                               class="btn btn-edit btn-small">Modifier</a>
+                                            <form method="post" action="${pageContext.request.contextPath}/livres" style="display:inline;">
+                                                <input type="hidden" name="action" value="delete"/>
+                                                <input type="hidden" name="id" value="<c:out value="${livre.id}"/>"/>
+                                                <%= com.bibliotheque.config.CSRFUtil.getHiddenField(request) %>
+                                                <button type="submit" class="btn btn-delete btn-small"
+                                                        onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce livre ?');">Supprimer</button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </c:forEach>
+                            <c:if test="${empty livres}">
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="empty-state">
+                                            <span class="icon">📭</span>
+                                            <h3>Aucun livre trouvé</h3>
+                                            <p>
+                                                <c:choose>
+                                                    <c:when test="${param.action == 'disponibles'}">
+                                                        Aucun livre disponible pour le moment
+                                                    </c:when>
+                                                    <c:otherwise>
+                                                        Ajoutez votre premier livre ou modifiez vos critères de recherche
+                                                    </c:otherwise>
+                                                </c:choose>
+                                            </p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </c:if>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
         <div class="footer">
             <p>&copy; 2025 Gestionnaire de Bibliothèque - Module Gestion des Livres</p>

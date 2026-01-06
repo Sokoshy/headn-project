@@ -26,17 +26,6 @@
             <scope>provided</scope>
         </dependency>
 
-          <!-- JSTL pour Jakarta EE 10+ -->
-        <dependency>
-            <groupId>jakarta.servlet.jsp.jstl</groupId>
-            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
-            <version>3.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.web</groupId>
-            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
-            <version>3.0.1</version>
-        </dependency>
         
         <!-- PostgreSQL Driver -->
         <dependency>
@@ -122,6 +111,24 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+            </plugin>
+
+            <!-- Plugin Jetty pour le développement local -->
+            <plugin>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-maven-plugin</artifactId>
+                <version>11.0.20</version>
+                <configuration>
+                    <httpConnector>
+                        <port>8080</port>
+                    </httpConnector>
+                    <webApp>
+                        <contextPath>/bibliotheque</contextPath>
+                    </webApp>
+                    <scanIntervalSeconds>5</scanIntervalSeconds>
+                    <stopKey>stop</stopKey>
+                    <stopPort>9999</stopPort>
+                </configuration>
             </plugin>
         </plugins>
     </build>
