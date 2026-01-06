@@ -86,8 +86,6 @@ public class LivreServlet extends HttpServlet {
     
     private void listerLivres(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException, SQLException {
-        
-        // Générer token CSRF pour les formulaires
         CSRFUtil.generateToken(request);
         
         List<Livre> livres = livreDAO.getAllLivres();
@@ -127,8 +125,6 @@ public class LivreServlet extends HttpServlet {
         
         String titre = ValidationUtil.sanitizeInput(request.getParameter("titre"));
         String auteur = ValidationUtil.sanitizeInput(request.getParameter("auteur"));
-        
-        // Validation des entrées
         if (!ValidationUtil.isNotEmpty(titre) || !ValidationUtil.isNotEmpty(auteur)) {
             request.setAttribute("error", "Titre et auteur sont obligatoires.");
         } else if (!ValidationUtil.isValidTitre(titre)) {
@@ -143,8 +139,6 @@ public class LivreServlet extends HttpServlet {
                 request.setAttribute("error", "Erreur lors de l'ajout du livre.");
             }
         }
-        
-        // Générer token CSRF et rediriger vers la liste
         CSRFUtil.generateToken(request);
         listerLivres(request, response);
     }
@@ -176,8 +170,6 @@ public class LivreServlet extends HttpServlet {
         } else {
             request.setAttribute("error", "Tous les champs sont obligatoires.");
         }
-        
-        // Rediriger vers la liste
         response.sendRedirect(request.getContextPath() + "/livres");
     }
     
@@ -191,7 +183,6 @@ public class LivreServlet extends HttpServlet {
                 Livre livre = livreDAO.getLivreById(id);
                 if (livre != null) {
                     request.setAttribute("livre", livre);
-                    // Affiche le formulaire d'édition dans livres.jsp
                     request.getRequestDispatcher("/WEB-INF/views/livres.jsp").forward(request, response);
                     return;
                 }
@@ -218,8 +209,6 @@ public class LivreServlet extends HttpServlet {
                 request.setAttribute("error", "ID du livre invalide.");
             }
         }
-        
-        // Rediriger vers la liste
         response.sendRedirect(request.getContextPath() + "/livres");
     }
 }

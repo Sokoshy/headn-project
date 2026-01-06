@@ -87,29 +87,23 @@ public class EmpruntServlet extends HttpServlet {
         }
     }
 
-    // Dans votre méthode listerEmpruntsActifs, remplacez cette partie :
     private void listerEmpruntsActifs(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException, SQLException {
         
-        // Récupérer d'abord tous les emprunts
         List<Emprunt> emprunts;
         List<Utilisateur> utilisateurs = utilisateurDAO.getAllUtilisateurs();
         List<Livre> livresDisponibles = livreDAO.getLivresDisponibles();
 
         String filtreUtilisateur = request.getParameter("filtreUtilisateur");
         
-        // Si un filtre utilisateur est spécifié, récupérer seulement ses emprunts
         if (filtreUtilisateur != null && !filtreUtilisateur.isEmpty()) {
             try {
                 int userId = Integer.parseInt(filtreUtilisateur);
-                // Créer une méthode spécifique pour récupérer les emprunts d'un utilisateur
                 emprunts = empruntDAO.getEmpruntsByUtilisateur(userId);
             } catch (NumberFormatException e) {
-                // En cas d'erreur, récupérer tous les emprunts
                 emprunts = empruntDAO.getEmpruntsActifs();
             }
         } else {
-            // Récupérer tous les emprunts
             emprunts = empruntDAO.getEmpruntsActifs();
         }
 
@@ -164,7 +158,6 @@ public class EmpruntServlet extends HttpServlet {
                 int empruntId = Integer.parseInt(empruntIdStr);
                 LocalDate dateRetour = LocalDate.now();
                 if (empruntDAO.enregistrerRetour(empruntId, dateRetour)) {
-                    // On suppose que EmpruntDAO peut fournir le livreId à partir de l'empruntId
                     Integer livreId = empruntDAO.getLivreIdByEmpruntId(empruntId);
                     if (livreId != null) {
                         livreDAO.updateDisponibilite(livreId, true);

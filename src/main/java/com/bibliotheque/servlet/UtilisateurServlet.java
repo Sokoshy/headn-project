@@ -107,7 +107,6 @@ public class UtilisateurServlet extends HttpServlet {
             ServiceResult<Utilisateur> result = utilisateurService.getUtilisateurById(idStr);
             if (result.isSuccess()) {
                 request.setAttribute("utilisateur", result.getData());
-                // Affiche le formulaire d'édition dans utilisateurs.jsp
                 request.getRequestDispatcher("/WEB-INF/views/utilisateurs.jsp").forward(request, response);
                 return;
             }
